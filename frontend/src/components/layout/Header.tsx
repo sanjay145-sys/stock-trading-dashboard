@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { RefreshCw, TrendingUp, TrendingDown, Activity, Minus, Wifi, WifiOff, Zap } from 'lucide-react';
+import { UserButton } from '@clerk/nextjs';
 import { MARKET_INDICES } from '@/lib/mock-data';
 import { useHealth } from '@/hooks/useStocks';
 import { triggerRefresh } from '@/lib/api';
@@ -168,6 +169,11 @@ export default function Header() {
           <span className="hidden sm:inline">
             {manualRefreshing ? 'Refreshing…' : isRefreshing ? 'Auto-refresh…' : 'Auto 5m'}
           </span>
+        </div>
+
+        {/* User avatar — click to open profile/sign-out menu */}
+        <div className="ml-1">
+          <UserButton />
         </div>
       </div>
     </header>
