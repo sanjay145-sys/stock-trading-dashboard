@@ -232,9 +232,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Build explicit origins list (filters out empty strings)
+_allowed_origins = list(filter(None, [
+    settings.frontend_url,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    allow_origins=_allowed_origins,
+    # Also allow any Vercel preview / production domain automatically
+    allow_origin_regex=r'https://.*\.vercel\.app',
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
