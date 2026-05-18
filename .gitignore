@@ -1,0 +1,20 @@
+# Dependencies
+frontend/node_modules/
+backend/__pycache__/
+backend/.venv/
+backend/venv/
+
+# Build
+frontend/.next/
+frontend/out/
+
+# Env files
+.env
+.env.local
+.env*.local
+frontend/.env*
+backend/.env*
+
+# System
+.DS_Store
+*.log
