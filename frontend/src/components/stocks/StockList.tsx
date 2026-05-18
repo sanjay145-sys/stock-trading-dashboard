@@ -1,30 +1,37 @@
 'use client';
 
-import { Search } from 'lucide-react';
+import { Search, Wifi, WifiOff } from 'lucide-react';
 import { useState } from 'react';
 import StockCard from './StockCard';
 import { useDashboardStore } from '@/lib/store';
-import { STOCK_LIST, INVEST_TICKERS, WATCH_TICKERS, AVOID_TICKERS } from '@/lib/mock-data';
+import type { Stock } from '@/types';
+
+interface StocksListProps {
+  tickers: { INVEST: string[]; WATCH: string[]; AVOID: string[] };
+  stocks: Record<string, { stock: Stock }>;
+  isMockData: boolean;
+  totalCount: number;
+}
 
 const SECTIONS = [
-  { label: 'INVEST', tickers: INVEST_TICKERS, color: 'text-emerald-400', border: 'border-l-emerald-500' },
-  { label: 'WATCH', tickers: WATCH_TICKERS, color: 'text-amber-400', border: 'border-l-amber-500' },
-  { label: 'AVOID', tickers: AVOID_TICKERS, color: 'text-red-400', border: 'border-l-red-500' },
+  { label: 'INVEST', key: 'INVEST', color: 'text-emerald-400', border: 'border-l-emerald-500' },
+  { label: 'WATCH', key: 'WATCH', color: 'text-amber-400', border: 'border-l-amber-500' },
+  { label: 'AVOID', key: 'AVOID', color: 'text-red-400', border: 'border-l-red-500' },
 ] as const;
 
-export default function StockList() {
+export default function StockList({ tickers, stocks, isMockData, totalCount }: StocksListProps) {
   const { selectedTicker, setSelectedTicker } = useDashboardStore();
   const [query, setQuery] = useState('');
 
-  const allStocks = STOCK_LIST;
-  const filteredTickers = query
-    ? allStocks
-        .filter(
-          (s) =>
-            s.ticker.toLowerCase().includes(query.toLowerCase()) ||
-            s.companyName.toLowerCase().includes(query.toLowerCase())
-        )
-        .map((s) => s.ticker)
+  const allTickers = [...tickers.INVEST, ...tickers.WATCH, ...tickers.AVOID];
+
+  const filteredTickers = query.length > 0
+    ? allTickers.filter((t) => {
+        const stock = stocks[t]?.stock;
+        if (!stock) return false;
+        const q = query.toLowerCase();
+        return t.toLowerCase().includes(q) || stock.companyName.toLowerCase().includes(q);
+      })
     : null;
 
   return (
@@ -48,10 +55,11 @@ export default function StockList() {
 
       {/* Stock groups */}
       <div className="flex-1 overflow-y-auto scrollbar-thin p-2 space-y-4">
-        {SECTIONS.map(({ label, tickers, color, border }) => {
+        {SECTIONS.map(({ label, key, color, border }) => {
+          const sectionTickers = tickers[key] as string[];
           const visible = filteredTickers
-            ? tickers.filter((t) => filteredTickers.includes(t))
-            : tickers;
+            ? sectionTickers.filter((t) => filteredTickers.includes(t))
+            : sectionTickers;
 
           if (visible.length === 0) return null;
 
@@ -63,7 +71,7 @@ export default function StockList() {
               </div>
               <div className="space-y-0.5">
                 {visible.map((ticker) => {
-                  const stock = allStocks.find((s) => s.ticker === ticker);
+                  const stock = stocks[ticker]?.stock;
                   if (!stock) return null;
                   return (
                     <StockCard
@@ -81,9 +89,14 @@ export default function StockList() {
       </div>
 
       {/* Footer */}
-      <div className="p-2.5 border-t border-zinc-800">
-        <p className="text-[10px] text-zinc-600 text-center">
-          {allStocks.length} stocks tracked · Auto-discovered
+      <div className="p-2.5 border-t border-zinc-800 flex items-center gap-1.5">
+        {isMockData ? (
+          <WifiOff className="w-3 h-3 text-amber-500 flex-shrink-0" />
+        ) : (
+          <Wifi className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+        )}
+        <p className="text-[10px] text-zinc-600">
+          {totalCount} stocks · {isMockData ? 'Demo data' : 'Live data'}
         </p>
       </div>
     </aside>

@@ -3,10 +3,9 @@
 import dynamic from 'next/dynamic';
 import { TrendingUp, TrendingDown, BarChart2 } from 'lucide-react';
 import { useDashboardStore } from '@/lib/store';
-import { ALL_STOCKS } from '@/lib/mock-data';
 import TechnicalPanel from '@/components/indicators/TechnicalPanel';
 import RecommendationCard from '@/components/recommendation/RecommendationCard';
-import type { Timeframe } from '@/types';
+import type { StockFullData, Timeframe } from '@/types';
 
 const PriceChart = dynamic(() => import('./PriceChart'), {
   ssr: false,
@@ -22,14 +21,21 @@ const PriceChart = dynamic(() => import('./PriceChart'), {
 
 const TIMEFRAMES: Timeframe[] = ['1D', '1W', '1M', '3M', '1Y'];
 
-export default function StockDetail() {
-  const { selectedTicker, activeTimeframe, setActiveTimeframe } = useDashboardStore();
-  const data = ALL_STOCKS[selectedTicker];
+interface StockDetailProps {
+  data: StockFullData | undefined;
+}
+
+export default function StockDetail({ data }: StockDetailProps) {
+  const { activeTimeframe, setActiveTimeframe } = useDashboardStore();
 
   if (!data) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-zinc-600 text-sm">Select a stock from the sidebar</p>
+        <div className="text-center">
+          <BarChart2 className="w-12 h-12 text-zinc-800 mx-auto mb-3 animate-pulse" />
+          <p className="text-zinc-600 text-sm">Loading market data…</p>
+          <p className="text-zinc-700 text-xs mt-1">Fetching real-time data from markets</p>
+        </div>
       </div>
     );
   }
@@ -42,6 +48,10 @@ export default function StockDetail() {
     WATCH: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
     AVOID: 'text-red-400 bg-red-500/10 border-red-500/30',
   }[stock.recommendation];
+
+  const rangePercent = stock.week52High > stock.week52Low
+    ? ((stock.price - stock.week52Low) / (stock.week52High - stock.week52Low)) * 100
+    : 50;
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-thin" style={{ backgroundColor: 'var(--bg-primary)' }}>
@@ -78,8 +88,8 @@ export default function StockDetail() {
         <div className="grid grid-cols-4 gap-2">
           {[
             { label: 'Market Cap', value: stock.marketCap },
-            { label: 'P/E Ratio', value: stock.pe != null ? stock.pe.toFixed(1) : 'N/A' },
-            { label: 'Beta', value: stock.beta.toFixed(2) },
+            { label: 'P/E Ratio', value: stock.pe != null ? Number(stock.pe).toFixed(1) : 'N/A' },
+            { label: 'Beta', value: Number(stock.beta).toFixed(2) },
             { label: 'Volume', value: stock.volume },
           ].map(({ label, value }) => (
             <div
@@ -101,7 +111,7 @@ export default function StockDetail() {
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] text-zinc-500 uppercase tracking-wide">52-Week Range</span>
             <span className="text-[10px] text-zinc-600">
-              ${stock.week52Low.toFixed(2)} – ${stock.week52High.toFixed(2)}
+              ${Number(stock.week52Low).toFixed(2)} – ${Number(stock.week52High).toFixed(2)}
             </span>
           </div>
           <div className="relative h-1.5 rounded-full bg-zinc-800">
@@ -111,9 +121,7 @@ export default function StockDetail() {
             />
             <div
               className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white border-2 border-indigo-500 shadow-lg shadow-indigo-500/30"
-              style={{
-                left: `calc(${((stock.price - stock.week52Low) / (stock.week52High - stock.week52Low)) * 100}% - 6px)`,
-              }}
+              style={{ left: `calc(${Math.max(0, Math.min(100, rangePercent))}% - 6px)` }}
             />
           </div>
         </div>
@@ -123,7 +131,6 @@ export default function StockDetail() {
           className="rounded-xl border border-zinc-800 overflow-hidden"
           style={{ backgroundColor: 'var(--bg-card)' }}
         >
-          {/* Timeframe tabs */}
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800">
             <span className="text-xs font-semibold text-zinc-400">Price Chart</span>
             <div className="flex items-center gap-1">

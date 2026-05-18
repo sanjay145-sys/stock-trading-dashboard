@@ -18,3 +18,7 @@ backend/.env*
 # System
 .DS_Store
 *.log
+backend/app/__pycache__/
+backend/__pycache__/
+backend/.env
+frontend/.env.local
